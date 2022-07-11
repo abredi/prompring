@@ -1,0 +1,41 @@
+version: "3.9"
+networks:
+  promnet:
+volumes:
+  prometheus_data:
+  grafana_data:
+services:
+  prompring:
+    build: .
+    container_name: prompring
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    networks:
+      - promnet
+  prometheus:
+    image: prom/prometheus
+    container_name: prom
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - promnet
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/:/etc/grafana/provisioning
+    ports:
+      - "9001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - promnet
+    env_file:
+      - ./monitoring/grafana/provisioning/grafana.config
